@@ -10,15 +10,22 @@ enum ExpansionError: Error {
     case notType
 }
 
-public struct EasyInit: MemberMacro {
-    
-    public static func expansion(of node: AttributeSyntax, providingMembersOf declaration: some DeclGroupSyntax, in context: some MacroExpansionContext) throws -> [DeclSyntax] {
+public struct Member {
+    var identifier: String
+    var type: String
+    var isOptional: Bool
+    var isClosure: Bool
+}
 
+public struct EasyInit: ExtensionMacro {
+    
+    public static func expansion(of node: SwiftSyntax.AttributeSyntax, attachedTo declaration: some SwiftSyntax.DeclGroupSyntax, providingExtensionsOf type: some SwiftSyntax.TypeSyntaxProtocol, conformingTo protocols: [SwiftSyntax.TypeSyntax], in context: some SwiftSyntaxMacros.MacroExpansionContext) throws -> [SwiftSyntax.ExtensionDeclSyntax] {
+        
         guard let structDeclSyntax = declaration.as(StructDeclSyntax.self) else {
             throw ExpansionError.notStruct
         }
 
-        var members: [(identifier: String, type: String, optional: Bool)] = []
+        var members: [Member] = []
         
         for member in structDeclSyntax.memberBlock.members {
             guard let variableDeclSyntax = member.decl.as(VariableDeclSyntax.self) else {
@@ -30,61 +37,77 @@ public struct EasyInit: MemberMacro {
                     throw ExpansionError.notIdentifier
                 }
                 
-                if let type = binding.typeAnnotation?.type.as(IdentifierTypeSyntax.self) {
-                    members.append((pattern.identifier.text, type.name.text, false))
-                } else if let type = binding.typeAnnotation?.type.as(OptionalTypeSyntax.self) {
-                    guard let wrappedType = type.wrappedType.as(IdentifierTypeSyntax.self) else {
-                        throw ExpansionError.notType
-                    }
-                    members.append((pattern.identifier.text, wrappedType.name.text, true))
-                } else {
+                guard let type = binding.typeAnnotation else {
                     throw ExpansionError.notType
                 }
+                
+                let isOptional = type.type.is(OptionalTypeSyntax.self)
+                let isClosure = type.type.is(FunctionTypeSyntax.self)
+                
+                members.append(.init(
+                    identifier: pattern.identifier.text,
+                    type: type.type.trimmedDescription,
+                    isOptional: isOptional,
+                    isClosure: isClosure))
             }
         }
         
-        return [
-            """
-            init(\(raw: parameters(members: members))) {
-                \(raw: assignments(members: members))
-            }
-            """,
-            """
-            init(copy: \(raw: structDeclSyntax.name.text), \(raw: optionalParameters(members: members))) {
-                \(raw: unwrappingAssignments(members: members))
-            }
-            """
-        ]
+        let sendableExtension: DeclSyntax =
+"""
+extension \(type.trimmed) {
+    init(copy: \(raw: structDeclSyntax.name.text), \(raw: optionalParameters(members: members))) {
+        \(raw: unwrappingAssignments(members: members))
+    }
+}
+"""
+
+        guard let extensionDecl = sendableExtension.as(ExtensionDeclSyntax.self) else {
+          return []
+        }
+
+        return [extensionDecl]
     }
 }
 
-public func parameters(members: [(String, String, Bool)]) -> String {
+public func parameters(members: [Member]) -> String {
     let output: [String] = members.map {
-        "\($0.0): \($0.1)\($0.2 ? "?" : "")"
-    }
-    
-    return output.joined(separator: ", ")
-}
-
-public func optionalParameters(members: [(String, String, Bool)]) -> String {
-    let output: [String] = members.map {
-        "\($0.0): \($0.1)? = nil"
+        "\($0.identifier): \($0.type)"
     }
     
     return output.joined(separator: ", ")
 }
 
-public func assignments(members: [(String, String, Bool)]) -> String {
+public func optionalParameters(members: [Member]) -> String {
     let output: [String] = members.map {
-        "self.\($0.0) = \($0.0)"
+        if $0.isOptional {
+            if $0.isClosure {
+                return "\($0.identifier): (\($0.type))? = nil"
+            } else {
+                return "\($0.identifier): \($0.type) = nil"
+            }
+        } else {
+            if $0.isClosure {
+                return "\($0.identifier): (\($0.type))? = nil"
+            } else {
+                return "\($0.identifier): \($0.type)? = nil"
+            }
+        }
+    }
+    
+    return output.joined(separator: ", ")
+}
+
+public func assignments(members: [Member]) -> String {
+    let output: [String] = members.map {
+        "self.\($0.identifier) = \($0.identifier)"
     }
     
     return output.joined(separator: "\n")
 }
 
-public func unwrappingAssignments(members: [(String, String, Bool)]) -> String {
+public func unwrappingAssignments(members: [Member]) -> String {
     let output: [String] = members.map {
-        "self.\($0.0) = \($0.0) ?? copy.\($0.0)"
+        "self.\($0.identifier) = \($0.identifier) ?? copy.\($0.identifier)"
     }
     
     return output.joined(separator: "\n")

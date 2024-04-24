@@ -26,11 +26,9 @@ final class MacrosTests: XCTestCase {
             expandedSource: """
             struct Main {
                 var a: Int
+            }
             
-                init(a: Int) {
-                    self.a = a
-                }
-            
+            extension Main {
                 init(copy: Main, a: Int? = nil) {
                     self.a = a ?? copy.a
                 }
@@ -57,12 +55,9 @@ final class MacrosTests: XCTestCase {
             struct Main {
                 var a: Int
                 var b: String?
+            }
             
-                init(a: Int, b: String?) {
-                    self.a = a
-                    self.b = b
-                }
-            
+            extension Main {
                 init(copy: Main, a: Int? = nil, b: String? = nil) {
                     self.a = a ?? copy.a
                     self.b = b ?? copy.b
@@ -112,15 +107,72 @@ final class MacrosTests: XCTestCase {
                 
                 var value: Int
                 var name: String?
+            }
             
-                init(value: Int, name: String?) {
-                    self.value = value
-                    self.name = name
-                }
-            
+            extension Main {
                 init(copy: Main, value: Int? = nil, name: String? = nil) {
                     self.value = value ?? copy.value
                     self.name = name ?? copy.name
+                }
+            }
+            """,
+            macros: testMacros
+        )
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+    
+    func test_escapingClosure() throws {
+        #if canImport(MacrosMacros)
+        assertMacroExpansion(
+            """
+            @EasyInit
+            struct Main {
+                var a: Int
+                var closure: () -> Void
+            }
+            """,
+            expandedSource: """
+            struct Main {
+                var a: Int
+                var closure: () -> Void
+            }
+            
+            extension Main {
+                init(copy: Main, a: Int? = nil, closure: (() -> Void)? = nil) {
+                    self.a = a ?? copy.a
+                    self.closure = closure ?? copy.closure
+                }
+            }
+            """,
+            macros: testMacros
+        )
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+    
+    func test_optionalClosure() throws {
+        #if canImport(MacrosMacros)
+        assertMacroExpansion(
+            """
+            @EasyInit
+            struct Main {
+                var a: Int
+                var closure: (() -> Void)?
+            }
+            """,
+            expandedSource: """
+            struct Main {
+                var a: Int
+                var closure: (() -> Void)?
+            }
+            
+            extension Main {
+                init(copy: Main, a: Int? = nil, closure: (() -> Void)? = nil) {
+                    self.a = a ?? copy.a
+                    self.closure = closure ?? copy.closure
                 }
             }
             """,

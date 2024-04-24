@@ -28,10 +28,12 @@ let package = Package(
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
             ]
         ),
-
+        
+        .executableTarget(name: "MacrosClient", dependencies: ["MacrosMacros"]),
+        
         // Library that exposes a macro as part of its API, which is used in client programs.
         .target(name: "Macros", dependencies: ["MacrosMacros"]),
-
+        
         // A test target used to develop the macro implementation.
         .testTarget(
             name: "MacrosTests",
