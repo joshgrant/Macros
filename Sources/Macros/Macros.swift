@@ -1,2 +1,2 @@
-@attached(member, names: arbitrary)
+@attached(extension, names: arbitrary)
 public macro EasyInit() = #externalMacro(module: "MacrosMacros", type: "EasyInit")

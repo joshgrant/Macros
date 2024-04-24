@@ -18,6 +18,10 @@ public struct Member {
 }
 
 public struct EasyInit: ExtensionMacro {
+//    
+//    public static func expansion(of node: AttributeSyntax, providingMembersOf declaration: some DeclGroupSyntax, in context: some MacroExpansionContext) throws -> [DeclSyntax] {
+//        return []
+//    }
     
     public static func expansion(of node: SwiftSyntax.AttributeSyntax, attachedTo declaration: some SwiftSyntax.DeclGroupSyntax, providingExtensionsOf type: some SwiftSyntax.TypeSyntaxProtocol, conformingTo protocols: [SwiftSyntax.TypeSyntax], in context: some SwiftSyntaxMacros.MacroExpansionContext) throws -> [SwiftSyntax.ExtensionDeclSyntax] {
         
@@ -55,7 +59,7 @@ public struct EasyInit: ExtensionMacro {
         let sendableExtension: DeclSyntax =
 """
 extension \(type.trimmed) {
-    init(copy: \(raw: structDeclSyntax.name.text), \(raw: optionalParameters(members: members))) {
+    init(_ copy: Self, \(raw: optionalParameters(members: members))) {
         \(raw: unwrappingAssignments(members: members))
     }
 }

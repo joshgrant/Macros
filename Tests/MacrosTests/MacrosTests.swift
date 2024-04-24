@@ -29,7 +29,7 @@ final class MacrosTests: XCTestCase {
             }
             
             extension Main {
-                init(copy: Main, a: Int? = nil) {
+                init(_ copy: Self, a: Int? = nil) {
                     self.a = a ?? copy.a
                 }
             }
@@ -58,7 +58,7 @@ final class MacrosTests: XCTestCase {
             }
             
             extension Main {
-                init(copy: Main, a: Int? = nil, b: String? = nil) {
+                init(_ copy: Self, a: Int? = nil, b: String? = nil) {
                     self.a = a ?? copy.a
                     self.b = b ?? copy.b
                 }
@@ -110,7 +110,7 @@ final class MacrosTests: XCTestCase {
             }
             
             extension Main {
-                init(copy: Main, value: Int? = nil, name: String? = nil) {
+                init(_ copy: Self, value: Int? = nil, name: String? = nil) {
                     self.value = value ?? copy.value
                     self.name = name ?? copy.name
                 }
@@ -140,7 +140,7 @@ final class MacrosTests: XCTestCase {
             }
             
             extension Main {
-                init(copy: Main, a: Int? = nil, closure: (() -> Void)? = nil) {
+                init(_ copy: Self, a: Int? = nil, closure: (() -> Void)? = nil) {
                     self.a = a ?? copy.a
                     self.closure = closure ?? copy.closure
                 }
@@ -170,7 +170,7 @@ final class MacrosTests: XCTestCase {
             }
             
             extension Main {
-                init(copy: Main, a: Int? = nil, closure: (() -> Void)? = nil) {
+                init(_ copy: Self, a: Int? = nil, closure: (() -> Void)? = nil) {
                     self.a = a ?? copy.a
                     self.closure = closure ?? copy.closure
                 }
